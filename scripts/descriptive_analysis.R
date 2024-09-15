@@ -227,6 +227,7 @@ fig <- (
   educ_graph +
     coord_cartesian(ylim = c(0,100)) +
     scale_y_continuous(breaks = seq(0,100,10)) +
+    scale_x_continuous(breaks = seq(2010,2018,1)) +
     labs(
       y = "Share of female population aged 15+ with education secondary or more (%)",
       x = "Years",
