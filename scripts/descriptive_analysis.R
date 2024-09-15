@@ -9,7 +9,7 @@ options(timeout = 600, scipen = 9999)
 
 # Packages
 library(pacman)
-p_load(wpp2024, tidyverse, wbstats)
+p_load(wpp2024, tidyverse, WDI, patchwork)
 
 # Fertility rates ---------------------------------------------------------
 
@@ -55,6 +55,7 @@ fertility_data <- percentASFR1dt %>%
 # Visualizing PASFR for each country
 
 percent <- fertility_data %>%
+  filter(age < 50) %>%
   ggplot() +
   aes(
     x = age,
@@ -166,3 +167,78 @@ variation <- fertility_data %>%
   scale_color_viridis_d() +
   lemon::facet_rep_wrap(name ~ ., repeat.tick.labels = TRUE) +
   theme_bw()
+
+
+# Education attainment ----------------------------------------------------
+
+WDI::WDIsearch(string='education', field='name', cache=NULL) %>% View()
+
+wbstats::wb_cachelist$countries %>% filter(country %in% c("India", "Peru","Vietnam","Ethiopia"))
+
+educ <- WDI::WDI(
+  country=c("ET","IN","PE","VN"),
+  indicator="account.t.d.6",
+  start=1980,
+  end=2020
+)
+
+# Handling
+
+educ <- educ %>%
+  as_tibble() %>%
+  select(country, year, school = account.t.d.6)
+
+# Visualizing educ
+
+educ_graph <- educ %>%
+  ggplot() +
+  aes(
+    x = year,
+    y = school,
+    group = as.factor(country),
+    color = as.factor(country)
+  ) +
+  geom_line(linewidth = 1.1) +
+  geom_point() +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw()
+
+
+# Setting graph -----------------------------------------------------------
+
+fig <- (
+  percent +
+    scale_x_continuous(breaks = seq(10,50,5)) +
+    labs(
+      y = "Relative age-specific fertility rates (%)",
+      x = "Age (in 5-years group)",
+      color = "Years",
+      title = "(i) Relative Age-specific Fertility Rate"
+    ) +
+    theme(
+      plot.title = element_text(face = "bold", size = 16, vjust = .5, hjust = .5),
+      axis.title = element_text(face = "bold", size = 12, vjust = .5, hjust = .5),
+      axis.text = element_text(size = 12, vjust = .5, hjust = .5),
+      legend.title = element_text(face = "bold", size = 12, vjust = .5, hjust = .5),
+      legend.position = c("bottom")
+    )
+) + (
+
+  educ_graph +
+    coord_cartesian(ylim = c(0,100)) +
+    scale_y_continuous(breaks = seq(0,100,10)) +
+    labs(
+      y = "Share of female population aged 15+ with education secondary or more (%)",
+      x = "Years",
+      color = "Countries",
+      title = "(ii) Share of female population aged 15+ with education secondary or more"
+    ) +
+    theme(
+      plot.title = element_text(face = "bold", size = 16, vjust = .5, hjust = .5),
+      axis.title = element_text(face = "bold", size = 12, vjust = .5, hjust = .5),
+      axis.text = element_text(size = 12, vjust = .5, hjust = .5),
+      legend.title = element_text(face = "bold", size = 12, vjust = .5, hjust = .5),
+      legend.position = c("bottom")
+    )
+
+)
